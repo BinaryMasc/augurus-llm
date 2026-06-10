@@ -68,6 +68,9 @@ class Database:
             cursor.execute('SELECT COUNT(*) FROM trades WHERE pnl <= 0')
             losing_trades = cursor.fetchone()[0]
 
+            cursor.execute('SELECT COUNT(*) FROM decisions')
+            total_inferences = cursor.fetchone()[0]
+
             cursor.execute('SELECT * FROM trades')
             all_trades = cursor.fetchall()
             
@@ -77,5 +80,6 @@ class Database:
                 "winning_trades": winning_trades,
                 "losing_trades": losing_trades,
                 "win_rate": (winning_trades / total_trades * 100) if total_trades > 0 else 0,
+                "total_inferences": total_inferences,
                 "trades": all_trades
             }

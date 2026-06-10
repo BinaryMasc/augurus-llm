@@ -91,11 +91,12 @@ def print_statistics(db=None):
     print("\n" + "="*30)
     print("      SIMULATION STATISTICS")
     print("="*30)
-    print(f"Total Trades:   {stats['total_trades']}")
-    print(f"Winning Trades: {stats['winning_trades']}")
-    print(f"Losing Trades:  {stats['losing_trades']}")
-    print(f"Win Rate:       {stats['win_rate']:.2f}%")
-    print(f"Total PnL:      {stats['total_pnl']:.2f}")
+    print(f"Total Trades:     {stats['total_trades']}")
+    print(f"Winning Trades:   {stats['winning_trades']}")
+    print(f"Losing Trades:    {stats['losing_trades']}")
+    print(f"Win Rate:         {stats['win_rate']:.2f}%")
+    print(f"Total PnL:        {stats['total_pnl']:.2f}")
+    print(f"Total Inferences: {stats['total_inferences']}")
     print("="*30)
     
     if stats['total_trades'] > 0:

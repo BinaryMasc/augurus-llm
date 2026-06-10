@@ -41,7 +41,7 @@ class LLMClient:
         decision will be one of: WAIT, BUY, SELL, CLOSE
         """
         
-        system_prompt = f"""You are an expert algorithmic trading AI.
+        system_prompt = f"""You are an expert algorithmic scalping trading AI that follows trends and momentum.
 Your task is to analyze the provided recent candlestick data and current portfolio state to make a single trading decision.
 The maximum allowed risk per trade is {self.max_risk}%.
 You MUST output EXACTLY ONE of the following words as your decision:
