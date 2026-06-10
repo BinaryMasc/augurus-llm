@@ -1,0 +1,17 @@
+simulation:
+  csv_file: "../OpenBackTest/public/data/btc_usdt_m1_jan2025-apr2026.csv"
+  candles_to_pass: 10
+  trading_timeframe: "M5" # Currently supported for aggregations (e.g. M1, M5, M15, H1)
+  max_trade_duration_m1: 120 # Maximum time in M1 candles to hold a trade
+  inference_frequency_m1: 15 # How often to make an inference (e.g. every 5 minutes)
+  contract_size: 1.0 # Fixed contract size for all trades
+  max_risk_per_trade_percentage: 2.0 # Inform the LLM of maximum risk
+  stop_loss_percentage: 5.0 # Automatic global stop loss (in %)
+  take_profit_percentage: 10.0 # Automatic global take profit (in %)
+  db_path: "trading_sim.sqlite"
+llm: "gemini"
+ollama:
+  url: "http://localhost:11434"
+  model: "gemma4-12b-Q8"
+gemini:
+  model: "gemini-3.1-flash-lite"
