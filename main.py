@@ -1,6 +1,7 @@
 import argparse
 import yaml
 import time
+import re
 import os
 from dotenv import load_dotenv
 from database.db import Database
@@ -12,18 +13,99 @@ def load_config(config_path="config.yaml"):
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
-def run_simulation(debug=False):
+def extract_symbol(csv_path: str) -> str:
+    """Derives symbol from CSV filename. E.g. 'btc_usdt_m1_jan2025.csv' -> 'BTCUSDT'."""
+    basename = os.path.basename(csv_path).lower()
+    # Remove file extension
+    name = os.path.splitext(basename)[0]
+    # Match the symbol part before the timeframe indicator (_m1_, _m5_, _h1_, etc.)
+    match = re.match(r'^(.+?)_(?:m\d+|h\d+|d\d+)_', name)
+    if match:
+        symbol = match.group(1).replace('_', '').upper()
+    else:
+        # Fallback: use the whole name without underscores
+        symbol = name.replace('_', '').upper()
+    return symbol
+
+def run_simulation(debug=False, continue_last=False):
     config = load_config()
     sim_config = config['simulation']
-    
-    print(f"Initializing simulation with CSV: {sim_config['csv_file']}")
     db = Database(sim_config['db_path'])
-    data_feed = DataFeed(sim_config['csv_file'], sim_config['trading_timeframe'])
-    portfolio = Portfolio(db, sim_config)
-    llm = LLMClient(config)
 
-    candles_to_pass = sim_config['candles_to_pass']
-    inference_freq = sim_config['inference_frequency_m1']
+    if continue_last:
+        # Resume the last session using its stored parameters
+        session = db.get_last_session()
+        if session is None:
+            print("[!] No previous session found. Starting a new simulation instead.")
+            continue_last = False
+        elif session['status'] == 'COMPLETED':
+            print(f"[!] Last session (ID {session['id']}) is already COMPLETED. Starting a new simulation.")
+            continue_last = False
+        else:
+            print(f"Resuming session {session['id']} (created {session['created_at']}, status: {session['status']})")
+
+    if continue_last:
+        # Use stored session parameters
+        session_id = session['id']
+        csv_file = session['csv_file']
+        trading_timeframe = session['trading_timeframe']
+        candles_to_pass = session['candles_to_pass']
+        inference_freq = session['inference_frequency_m1']
+        model_name = session['model']
+        llm_provider = session['llm_provider']
+        resume_index = session['last_candle_index']
+
+        # Build a config-like dict for Portfolio from session parameters
+        portfolio_config = {
+            'contract_size': session['contract_size'],
+            'stop_loss_percentage': session['stop_loss_percentage'],
+            'take_profit_percentage': session['take_profit_percentage'],
+            'max_trade_duration_m1': session['max_trade_duration_m1'],
+        }
+
+        print(f"  CSV: {csv_file}")
+        print(f"  Model: {llm_provider}/{model_name}")
+        print(f"  Timeframe: {trading_timeframe} | Inference freq: {inference_freq}")
+        print(f"  Resuming from candle index: {resume_index}")
+
+        data_feed = DataFeed(csv_file, trading_timeframe)
+        data_feed.set_index(resume_index)
+        portfolio = Portfolio(db, portfolio_config, session_id=session_id)
+        llm = LLMClient(config)
+
+        # Update session status back to RUNNING
+        db.update_session_status(session_id, 'RUNNING')
+    else:
+        # New session
+        csv_file = sim_config['csv_file']
+        trading_timeframe = sim_config['trading_timeframe']
+        candles_to_pass = sim_config['candles_to_pass']
+        inference_freq = sim_config['inference_frequency_m1']
+
+        print(f"Initializing simulation with CSV: {csv_file}")
+        data_feed = DataFeed(csv_file, trading_timeframe)
+        llm = LLMClient(config)
+
+        symbol = extract_symbol(csv_file)
+        model_name = llm.model_name
+        llm_provider = llm.provider
+
+        session_id = db.create_session({
+            'csv_file': csv_file,
+            'symbol': symbol,
+            'model': model_name,
+            'llm_provider': llm_provider,
+            'trading_timeframe': trading_timeframe,
+            'inference_frequency_m1': inference_freq,
+            'candles_to_pass': candles_to_pass,
+            'max_trade_duration_m1': sim_config.get('max_trade_duration_m1', 60),
+            'contract_size': sim_config.get('contract_size', 1.0),
+            'stop_loss_percentage': sim_config.get('stop_loss_percentage', 5.0),
+            'take_profit_percentage': sim_config.get('take_profit_percentage', 5.0),
+        })
+        print(f"Created session {session_id} (symbol: {symbol}, model: {llm_provider}/{model_name})")
+
+        portfolio = Portfolio(db, sim_config, session_id=session_id)
 
     print("Starting simulation loop...")
     start_time = time.time()
@@ -60,14 +142,19 @@ def run_simulation(debug=False):
                     print(f"PARSED DECISION: {decision}")
                     print(f"{'='*57}\n")
                 
-                db.log_decision(current_time, current_price, decision, prompt, response)
+                db.log_decision(current_time, current_price, decision, prompt, response,
+                                session_id=session_id, model=model_name)
                 portfolio.execute_decision(decision, current_time, current_price)
                 
                 inferences_made += 1
+                
+                # Update session progress checkpoint
+                db.update_session_progress(session_id, idx, current_time)
 
             data_feed.advance(1)
     except KeyboardInterrupt:
         print("\n[!] Simulation interrupted by user (CTRL+C). Cleaning up and saving state...")
+        db.update_session_status(session_id, 'INTERRUPTED')
 
     # Close any open trade at the end of the simulation
     if portfolio.active_trade:
@@ -77,19 +164,30 @@ def run_simulation(debug=False):
         portfolio.close_trade(t_str, last_candle['close'], reason="END_OF_SIMULATION")
 
     elapsed = time.time() - start_time
+    
+    # Mark session as completed (only if not already interrupted)
+    try:
+        session_row = db.get_last_session()
+        if session_row and session_row['id'] == session_id and session_row['status'] != 'INTERRUPTED':
+            db.update_session_status(session_id, 'COMPLETED')
+    except Exception:
+        pass
+
     print(f"Simulation finished in {elapsed:.2f} seconds.")
     print(f"Total inferences made: {inferences_made}")
-    print_statistics(db)
+    print_statistics(db, session_id=session_id)
 
 
-def print_statistics(db=None):
+def print_statistics(db=None, session_id=None):
     if db is None:
         config = load_config()
         db = Database(config['simulation']['db_path'])
         
-    stats = db.get_statistics()
-    print("\n" + "="*30)
-    print("      SIMULATION STATISTICS")
+    stats = db.get_statistics(session_id=session_id)
+
+    scope_label = f" (Session {session_id})" if session_id else " (All Sessions)"
+    print(f"\n{'='*30}")
+    print(f"  SIMULATION STATISTICS{scope_label}")
     print("="*30)
     print(f"Total Trades:     {stats['total_trades']}")
     print(f"Winning Trades:   {stats['winning_trades']}")
@@ -102,9 +200,9 @@ def print_statistics(db=None):
     if stats['total_trades'] > 0:
         print("\nLast 5 Trades:")
         for t in stats['trades'][-5:]:
-            # t is a tuple: (id, type, entry_time, entry_price, exit_time, exit_price, size, pnl, reason)
-            pnl_str = f"+{t[7]:.2f}" if t[7] > 0 else f"{t[7]:.2f}"
-            print(f"[{t[2]}] {t[1]} @ {t[3]:.2f} -> Closed @ {t[5]:.2f} [{t[8]}] | PnL: {pnl_str}")
+            # t is a tuple: (id, session_id, type, entry_time, entry_price, exit_time, exit_price, size, pnl, reason)
+            pnl_str = f"+{t[8]:.2f}" if t[8] > 0 else f"{t[8]:.2f}"
+            print(f"[{t[3]}] {t[2]} @ {t[4]:.2f} -> Closed @ {t[6]:.2f} [{t[9]}] | PnL: {pnl_str}")
 
 if __name__ == "__main__":
     # Ensure .env is loaded from the script directory
@@ -114,10 +212,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="LLM Trading Simulator CLI")
     parser.add_argument("--statistics", action="store_true", help="Print statistics from the database and exit")
     parser.add_argument("--debug", action="store_true", help="Print prompts and raw responses for each inference")
+    parser.add_argument("--continue", dest="continue_last", action="store_true",
+                        help="Continue the last simulation session from where it left off")
     
     args = parser.parse_args()
     
     if args.statistics:
         print_statistics()
     else:
-        run_simulation(debug=args.debug)
+        run_simulation(debug=args.debug, continue_last=args.continue_last)

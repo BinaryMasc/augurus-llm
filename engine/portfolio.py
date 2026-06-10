@@ -2,9 +2,10 @@ from typing import Optional, Dict
 from database.db import Database
 
 class Portfolio:
-    def __init__(self, db: Database, config: dict):
+    def __init__(self, db: Database, config: dict, session_id: int = None):
         self.db = db
         self.config = config
+        self.session_id = session_id
         
         self.active_trade: Optional[Dict] = None
         
@@ -109,7 +110,8 @@ class Portfolio:
             exit_price=current_price,
             size=size,
             pnl=pnl,
-            reason=reason
+            reason=reason,
+            session_id=self.session_id
         )
         
         self.active_trade = None

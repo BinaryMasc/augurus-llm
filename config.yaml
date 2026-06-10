@@ -15,3 +15,4 @@ ollama:
   model: "gemma4-12b-Q8"
 gemini:
   model: "gemini-3.1-flash-lite"
+  reasoning: false

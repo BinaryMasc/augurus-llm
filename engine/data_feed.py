@@ -42,6 +42,10 @@ class DataFeed:
     def advance(self, steps: int = 1):
         self.current_index += steps
 
+    def set_index(self, index: int):
+        """Sets the cursor to a specific candle index (for resuming sessions)."""
+        self.current_index = min(index, self.max_index)
+
     def get_window(self, candles_to_pass: int) -> List[Dict]:
         """Returns the last `candles_to_pass` up to the current index as a list of dicts."""
         # Ensure we don't go out of bounds backwards
