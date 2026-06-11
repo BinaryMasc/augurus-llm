@@ -74,10 +74,15 @@ def run_simulation(debug=False, continue_last=False):
             'max_trade_duration_m1': session['max_trade_duration_m1'],
         }
 
+        # Query session stats for display
+        stats = db.get_statistics(session_id=session_id)
+        last_ts = session.get('last_candle_timestamp', 'N/A')
+
         print(f"  CSV: {csv_file}")
         print(f"  Model: {llm_provider}/{model_name}")
-        print(f"  Timeframe: {trading_timeframe} | Inference freq: {inference_freq}")
-        print(f"  Resuming from candle index: {resume_index}")
+        print(f"  Timeframe: {trading_timeframe} | Candles to pass: {candles_to_pass} | Inference freq: {inference_freq}")
+        print(f"  Last checkpoint: candle {resume_index} @ {last_ts}")
+        print(f"  Inferences so far: {stats['total_inferences']} | Trades so far: {stats['total_trades']}")
 
         data_feed = DataFeed(csv_file, trading_timeframe)
         data_feed.set_index(resume_index)
