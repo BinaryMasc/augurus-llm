@@ -10,9 +10,9 @@ A CLI tool that simulates trading by parsing CSV candlestick data and using an O
 - SQLite database for storing trades and statistics.
 - `--statistics` flag to view PnL and trade history.
 - `--continue` flag to continue a previous session.
+- **Web Dashboard** (`--http`) — interactive dashboard with session overview, detailed stats, and charts (cumulative PnL, long/short distribution, win rate, strikes, sharpe ratio, math expectation).
 
 ## Futurables (To-Dos)
-- [ ] **Web Dashboard**: Create a simple React or HTML/JS frontend to visualize the candlestick chart, mark where the LLM bought/sold, and plot the equity curve in real-time.
 - [ ] **Real-time Live Exchange Feed**: Replace the CSV data feed with a WebSocket connection to Binance or Bybit for live paper trading.
 - [ ] **Technical Indicators**: Feed calculated indicators (RSI, MACD, Moving Averages) alongside raw prices to give the LLM better context.
 - [ ] **Advanced Risk Management**: Dynamic stop-loss and trailing take-profit, informed by the LLM.

@@ -230,10 +230,17 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", help="Print prompts and raw responses for each inference")
     parser.add_argument("--continue", dest="continue_last", nargs="?", const=True, type=int,
                         help="Continue the last simulation session, or a specific session by ID (e.g. --continue 1)")
+    parser.add_argument("--http", nargs="?", const=True, type=int,
+                        help="Start the web dashboard. Optionally specify port (default 8080).")
     
     args = parser.parse_args()
     
-    if args.statistics:
+    if args.http:
+        config = load_config()
+        from web.dashboard import run_dashboard
+        port = args.http if isinstance(args.http, int) else 8080
+        run_dashboard(config['simulation']['db_path'], port=port)
+    elif args.statistics:
         print_statistics()
     else:
         run_simulation(debug=args.debug, continue_last=args.continue_last)

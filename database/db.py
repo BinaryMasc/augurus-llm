@@ -1,3 +1,5 @@
+import math
+import statistics
 import sqlite3
 from typing import Dict, List, Optional
 from datetime import datetime
@@ -167,6 +169,94 @@ class Database:
             conn.commit()
 
     # ── Statistics ──────────────────────────────────────────────────────
+
+    def get_sessions_list(self) -> List[Dict]:
+        """Returns all sessions with a quick summary per session."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT s.*,
+                    (SELECT COUNT(*) FROM trades t WHERE t.session_id = s.id) as total_trades,
+                    (SELECT COALESCE(SUM(pnl), 0) FROM trades t WHERE t.session_id = s.id) as total_pnl,
+                    (SELECT COUNT(*) FROM trades t WHERE t.session_id = s.id AND t.pnl > 0) as winning_trades
+                FROM sessions s
+                ORDER BY s.id DESC
+            ''')
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_session_details(self, session_id: int) -> Dict:
+        """Returns detailed stats for a session, including advanced metrics."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT * FROM sessions WHERE id = ?', (session_id,))
+            session_row = cursor.fetchone()
+            if session_row is None:
+                return None
+            session = dict(session_row)
+
+            cursor.execute('SELECT * FROM trades WHERE session_id = ? ORDER BY id ASC', (session_id,))
+            trades = [dict(r) for r in cursor.fetchall()]
+
+            total_trades = len(trades)
+            total_pnl = sum(t.get('pnl') or 0.0 for t in trades)
+            winning_trades = [t for t in trades if (t.get('pnl') or 0.0) > 0]
+            losing_trades = [t for t in trades if (t.get('pnl') or 0.0) <= 0]
+            win_count = len(winning_trades)
+            lose_count = len(losing_trades)
+            win_rate = (win_count / total_trades * 100) if total_trades > 0 else 0.0
+
+            avg_profit = (sum(t['pnl'] for t in winning_trades) / win_count) if win_count > 0 else 0.0
+            avg_loss = (sum(t['pnl'] for t in losing_trades) / lose_count) if lose_count > 0 else 0.0
+
+            long_trades = [t for t in trades if t['type'] == 'BUY']
+            short_trades = [t for t in trades if t['type'] == 'SELL']
+            long_count = len(long_trades)
+            short_count = len(short_trades)
+            long_pnl = sum(t['pnl'] for t in long_trades)
+            short_pnl = sum(t['pnl'] for t in short_trades)
+
+            pnl_values = [t['pnl'] for t in trades if t.get('pnl') is not None]
+            if len(pnl_values) > 1:
+                mean_pnl = statistics.mean(pnl_values)
+                stdev_pnl = statistics.stdev(pnl_values)
+                sharpe_ratio = (mean_pnl / stdev_pnl * math.sqrt(len(pnl_values))) if stdev_pnl > 0 else 0.0
+            else:
+                sharpe_ratio = 0.0
+
+            math_expectation = (win_rate / 100.0 * avg_profit) + ((1 - win_rate / 100.0) * avg_loss) if total_trades > 0 else 0.0
+
+            cumulative_pnl = []
+            running = 0.0
+            for t in trades:
+                running += t.get('pnl') or 0.0
+                cumulative_pnl.append({'index': len(cumulative_pnl) + 1, 'pnl': running, 'label': t['entry_time']})
+
+            pnl_array = [{'index': i + 1, 'pnl': t.get('pnl') or 0.0, 'type': t['type'],
+                          'entry_time': t['entry_time'], 'reason': t.get('reason', '')}
+                         for i, t in enumerate(trades)]
+
+            return {
+                'session': session,
+                'trades': trades,
+                'total_trades': total_trades,
+                'total_pnl': total_pnl,
+                'winning_trades': win_count,
+                'losing_trades': lose_count,
+                'win_rate': round(win_rate, 2),
+                'avg_profit': round(avg_profit, 2),
+                'avg_loss': round(avg_loss, 2),
+                'sharpe_ratio': round(sharpe_ratio, 4),
+                'math_expectation': round(math_expectation, 4),
+                'long_count': long_count,
+                'short_count': short_count,
+                'long_pnl': round(long_pnl, 2),
+                'short_pnl': round(short_pnl, 2),
+                'cumulative_pnl': cumulative_pnl,
+                'pnl_array': pnl_array,
+            }
 
     def get_statistics(self, session_id: int = None) -> Dict:
         """Returns stats. If session_id is given, scopes to that session only."""

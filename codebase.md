@@ -1,7 +1,7 @@
 # Codebase Resume — Augurus LLM Trading Simulator
 
 > **Purpose**: Quick-reference document for AI agents working on this codebase.
-> Last updated: 2026-06-10
+> Last updated: 2026-06-11
 
 ---
 
@@ -9,7 +9,7 @@
 
 Augurus is a **CLI-based backtesting simulator** that replays historical candlestick data through an LLM to generate trading decisions (BUY / SELL / CLOSE / WAIT). Trades are tracked with a portfolio manager that enforces risk rules (SL, TP, max duration), and all decisions and trades are persisted to a local SQLite database. Each simulation run is tracked as a **session** with its parameters stored for reproducibility and resume capability.
 
-**Tech stack**: Python 3 · Pandas · PyYAML · Requests · python-dotenv · google-generativeai  
+**Tech stack**: Python 3 · Pandas · PyYAML · Requests · python-dotenv · google-generativeai · Flask  
 **LLM backends**: Google Gemini (cloud) **or** Ollama (local). Selected via `config.yaml → llm`.
 
 ---
@@ -29,6 +29,8 @@ augurus-llm/
 │   ├── data_feed.py         # DataFeed – CSV loading & timeframe aggregation
 │   ├── llm_client.py        # LLMClient – prompt construction & LLM calls
 │   └── portfolio.py         # Portfolio – trade execution, SL/TP, PnL
+├── web/
+│   └── dashboard.py         # Web dashboard – Flask app, Chart.js frontend
 └── venv/                    # Virtual environment (gitignored)
 ```
 
@@ -88,7 +90,7 @@ CSV file ──► DataFeed ──► candle window ──► LLMClient (prompt 
 | `run_simulation(debug, continue_last)` | Main loop. Creates or resumes session. `--debug` prints full prompts/responses. |
 | `print_statistics(db, session_id)` | Queries DB (optionally scoped to a session), prints win rate / PnL / last 5 trades. |
 
-**CLI flags**: `--statistics` (print stats and exit), `--debug` (verbose inference logging), `--continue [ID]` (resume last session, or a specific session by ID).
+**CLI flags**: `--statistics` (print stats and exit), `--debug` (verbose inference logging), `--continue [ID]` (resume last session, or a specific session by ID), `--http [PORT]` (start web dashboard on given port, default 8080).
 
 ---
 
@@ -106,7 +108,9 @@ Wraps SQLite with context-managed connections (new connection per call). Handles
 | `update_session_status(session_id, status)` | Sets status to `RUNNING`, `COMPLETED`, or `INTERRUPTED`. |
 | `log_decision(timestamp, price, decision, prompt, response, session_id, model)` | Inserts into `decisions` with session and model info. |
 | `log_trade(..., session_id)` | Inserts into `trades` with session link. |
-| `get_statistics(session_id=None)` | Returns stats dict. If `session_id` given, scopes to that session only. |
+| `get_statistics(session_id=None)` | Returns basic stats dict (counts, total PnL, win rate). If `session_id` given, scopes to that session only. |
+| `get_sessions_list()` | Returns all sessions with summary (trades count, total PnL, wins) for the dashboard overview. |
+| `get_session_details(session_id)` | Returns detailed stats for a session: avg profit/loss, sharpe ratio, math expectation, long/short breakdown, cumulative PnL array, per-trade PnL array. Used by the web dashboard. |
 
 #### SQLite Schema
 
@@ -275,6 +279,10 @@ python main.py --continue 1       # Resume session with ID 1
 python main.py --continue --debug # Resume with verbose output
 python main.py --continue 1 --debug # Resume session 1 with verbose output
 python main.py --statistics       # Print stats from DB only (all sessions)
+
+# Web dashboard
+python main.py --http             # Start dashboard on http://0.0.0.0:8080
+python main.py --http 5000        # Start dashboard on custom port
 
 # Prerequisites
 # - CSV data file at the path specified in config.yaml
