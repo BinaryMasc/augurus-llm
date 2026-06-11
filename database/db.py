@@ -62,9 +62,9 @@ class Database:
             conn.commit()
 
             # Backward compatibility: add new columns to existing tables
-            self._migrate_add_column(cursor, 'trades', 'session_id', 'INTEGER')
-            self._migrate_add_column(cursor, 'decisions', 'session_id', 'INTEGER')
-            self._migrate_add_column(cursor, 'decisions', 'model', 'TEXT')
+            # self._migrate_add_column(cursor, 'trades', 'session_id', 'INTEGER')
+            # self._migrate_add_column(cursor, 'decisions', 'session_id', 'INTEGER')
+            # self._migrate_add_column(cursor, 'decisions', 'model', 'TEXT')
             conn.commit()
 
     def _migrate_add_column(self, cursor, table: str, column: str, col_type: str):
