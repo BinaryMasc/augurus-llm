@@ -9,6 +9,10 @@ A CLI tool that simulates trading by parsing CSV candlestick data and using an O
 - Calculates PnL, handles fixed contract sizes, and enforces global SL/TP and maximum trade durations.
 - SQLite database for storing trades and statistics.
 - `--statistics` flag to view PnL and trade history.
+- `--continue` flag to continue a previous session.
+
+## Inmediate To-Dos
+- Select and continue sessions by id.
 
 ## Futurables (To-Dos)
 - [ ] **Web Dashboard**: Create a simple React or HTML/JS frontend to visualize the candlestick chart, mark where the LLM bought/sold, and plot the equity curve in real-time.
