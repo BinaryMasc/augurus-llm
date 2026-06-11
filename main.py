@@ -216,9 +216,9 @@ def print_statistics(db=None, session_id=None):
     if stats['total_trades'] > 0:
         print("\nLast 5 Trades:")
         for t in stats['trades'][-5:]:
-            # t is a tuple: (id, session_id, type, entry_time, entry_price, exit_time, exit_price, size, pnl, reason)
-            pnl_str = f"+{t[8]:.2f}" if t[8] > 0 else f"{t[8]:.2f}"
-            print(f"[{t[3]}] {t[2]} @ {t[4]:.2f} -> Closed @ {t[6]:.2f} [{t[9]}] | PnL: {pnl_str}")
+            pnl_val = float(t['pnl']) if t.get('pnl') is not None else 0.0
+            pnl_str = f"+{pnl_val:.2f}" if pnl_val > 0 else f"{pnl_val:.2f}"
+            print(f"[{t['entry_time']}] {t['type']} @ {t['entry_price']:.2f} -> Closed @ {t['exit_price']:.2f} [{t['reason']}] | PnL: {pnl_str}")
 
 if __name__ == "__main__":
     # Ensure .env is loaded from the script directory

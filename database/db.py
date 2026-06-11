@@ -199,8 +199,10 @@ class Database:
             cursor.execute(f'SELECT COUNT(*) FROM decisions{session_filter}', params)
             total_inferences = cursor.fetchone()[0]
 
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
             cursor.execute(f'SELECT * FROM trades{session_filter}', params)
-            all_trades = cursor.fetchall()
+            all_trades = [dict(row) for row in cursor.fetchall()]
             
             return {
                 "total_trades": total_trades,
