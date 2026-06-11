@@ -32,17 +32,28 @@ def run_simulation(debug=False, continue_last=False):
     sim_config = config['simulation']
     db = Database(sim_config['db_path'])
 
-    if continue_last:
-        # Resume the last session using its stored parameters
-        session = db.get_last_session()
-        if session is None:
-            print("[!] No previous session found. Starting a new simulation instead.")
-            continue_last = False
-        elif session['status'] == 'COMPLETED':
-            print(f"[!] Last session (ID {session['id']}) is already COMPLETED. Starting a new simulation.")
-            continue_last = False
+    if continue_last is not False:
+        if isinstance(continue_last, int):
+            session = db.get_session_by_id(continue_last)
+            if session is None:
+                print(f"[!] Session {continue_last} not found. Starting a new simulation instead.")
+                continue_last = False
+            elif session['status'] == 'COMPLETED':
+                print(f"[!] Session {session['id']} is already COMPLETED. Starting a new simulation.")
+                continue_last = False
+            else:
+                print(f"Resuming session {session['id']} (created {session['created_at']}, status: {session['status']})")
         else:
-            print(f"Resuming session {session['id']} (created {session['created_at']}, status: {session['status']})")
+            # Resume the last session using its stored parameters
+            session = db.get_last_session()
+            if session is None:
+                print("[!] No previous session found. Starting a new simulation instead.")
+                continue_last = False
+            elif session['status'] == 'COMPLETED':
+                print(f"[!] Last session (ID {session['id']}) is already COMPLETED. Starting a new simulation.")
+                continue_last = False
+            else:
+                print(f"Resuming session {session['id']} (created {session['created_at']}, status: {session['status']})")
 
     if continue_last:
         # Use stored session parameters
@@ -212,8 +223,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="LLM Trading Simulator CLI")
     parser.add_argument("--statistics", action="store_true", help="Print statistics from the database and exit")
     parser.add_argument("--debug", action="store_true", help="Print prompts and raw responses for each inference")
-    parser.add_argument("--continue", dest="continue_last", action="store_true",
-                        help="Continue the last simulation session from where it left off")
+    parser.add_argument("--continue", dest="continue_last", nargs="?", const=True, type=int,
+                        help="Continue the last simulation session, or a specific session by ID (e.g. --continue 1)")
     
     args = parser.parse_args()
     

@@ -116,6 +116,17 @@ class Database:
                 return None
             return dict(row)
 
+    def get_session_by_id(self, session_id: int) -> Optional[Dict]:
+        """Returns a session by its ID, or None."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM sessions WHERE id = ?', (session_id,))
+            row = cursor.fetchone()
+            if row is None:
+                return None
+            return dict(row)
+
     def update_session_progress(self, session_id: int, candle_index: int, candle_timestamp: str):
         """Updates the resume checkpoint for a session."""
         with sqlite3.connect(self.db_path) as conn:

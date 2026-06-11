@@ -69,8 +69,8 @@ CSV file ──► DataFeed ──► candle window ──► LLMClient (prompt 
 
 ### Resume Flow (`--continue`)
 
-1. Load last session from DB via `db.get_last_session()`.
-2. If the last session is `COMPLETED`, start a new session instead.
+1. If a session ID is given (e.g. `--continue 1`), load that session via `db.get_session_by_id()`. Otherwise, load the last session via `db.get_last_session()`.
+2. If the session is `COMPLETED`, start a new session instead.
 3. Use **stored session parameters** (ignores current `config.yaml`) to init `DataFeed`, `Portfolio`, `LLMClient`.
 4. Fast-forward `DataFeed` to `last_candle_index` via `set_index()`.
 5. Resume the simulation loop. Existing trades/decisions remain intact.
@@ -88,7 +88,7 @@ CSV file ──► DataFeed ──► candle window ──► LLMClient (prompt 
 | `run_simulation(debug, continue_last)` | Main loop. Creates or resumes session. `--debug` prints full prompts/responses. |
 | `print_statistics(db, session_id)` | Queries DB (optionally scoped to a session), prints win rate / PnL / last 5 trades. |
 
-**CLI flags**: `--statistics` (print stats and exit), `--debug` (verbose inference logging), `--continue` (resume last session).
+**CLI flags**: `--statistics` (print stats and exit), `--debug` (verbose inference logging), `--continue [ID]` (resume last session, or a specific session by ID).
 
 ---
 
@@ -271,7 +271,9 @@ pip install -r requirements.txt
 python main.py                    # New session with config.yaml params
 python main.py --debug            # Verbose (shows prompts/responses)
 python main.py --continue         # Resume last session (uses stored params)
+python main.py --continue 1       # Resume session with ID 1
 python main.py --continue --debug # Resume with verbose output
+python main.py --continue 1 --debug # Resume session 1 with verbose output
 python main.py --statistics       # Print stats from DB only (all sessions)
 
 # Prerequisites
