@@ -65,6 +65,7 @@ def run_simulation(debug=False, continue_last=False):
         model_name = session['model']
         llm_provider = session['llm_provider']
         resume_index = session['last_candle_index']
+        reasoning = session.get('reasoning', 0)
 
         # Build a config-like dict for Portfolio from session parameters
         portfolio_config = {
@@ -80,6 +81,7 @@ def run_simulation(debug=False, continue_last=False):
 
         print(f"  CSV: {csv_file}")
         print(f"  Model: {llm_provider}/{model_name}")
+        print(f"  Reasoning: {'Enabled' if bool(reasoning) else 'Disabled'}")
         print(f"  Timeframe: {trading_timeframe} | Candles to pass: {candles_to_pass} | Inference freq: {inference_freq}")
         print(f"  Last checkpoint: candle {resume_index} @ {last_ts}")
         print(f"  Inferences so far: {stats['total_inferences']} | Trades so far: {stats['total_trades']}")
@@ -87,7 +89,18 @@ def run_simulation(debug=False, continue_last=False):
         data_feed = DataFeed(csv_file, trading_timeframe)
         data_feed.set_index(resume_index)
         portfolio = Portfolio(db, portfolio_config, session_id=session_id)
-        llm = LLMClient(config)
+
+        # Build overridden config for LLMClient from stored session parameters
+        llm_config = dict(config)
+        llm_config['llm'] = llm_provider
+        if llm_provider not in llm_config:
+            llm_config[llm_provider] = {}
+        else:
+            llm_config[llm_provider] = dict(llm_config[llm_provider])
+        llm_config[llm_provider]['model'] = model_name
+        llm_config[llm_provider]['reasoning'] = bool(reasoning)
+
+        llm = LLMClient(llm_config)
 
         # Update session status back to RUNNING
         db.update_session_status(session_id, 'RUNNING')
@@ -105,6 +118,7 @@ def run_simulation(debug=False, continue_last=False):
         symbol = extract_symbol(csv_file)
         model_name = llm.model_name
         llm_provider = llm.provider
+        reasoning = 1 if config.get(llm_provider, {}).get('reasoning', False) else 0
 
         session_id = db.create_session({
             'csv_file': csv_file,
@@ -118,8 +132,9 @@ def run_simulation(debug=False, continue_last=False):
             'contract_size': sim_config.get('contract_size', 1.0),
             'stop_loss_percentage': sim_config.get('stop_loss_percentage', 5.0),
             'take_profit_percentage': sim_config.get('take_profit_percentage', 5.0),
+            'reasoning': reasoning,
         })
-        print(f"Created session {session_id} (symbol: {symbol}, model: {llm_provider}/{model_name})")
+        print(f"Created session {session_id} (symbol: {symbol}, model: {llm_provider}/{model_name}, reasoning: {bool(reasoning)})")
 
         portfolio = Portfolio(db, sim_config, session_id=session_id)
 

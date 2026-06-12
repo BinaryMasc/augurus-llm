@@ -158,6 +158,7 @@ h1 { font-size: 22px; }
 <table class="info-table">
 <tr><td>Symbol</td><td>{{ stats.session.symbol }}</td></tr>
 <tr><td>Model</td><td>{{ stats.session.llm_provider }}/{{ stats.session.model }}</td></tr>
+<tr><td>Reasoning</td><td>{{ 'Enabled' if stats.session.reasoning else 'Disabled' }}</td></tr>
 <tr><td>Timeframe</td><td>{{ stats.session.trading_timeframe }}</td></tr>
 <tr><td>CSV File</td><td style="font-size:11px;word-break:break-all;">{{ stats.session.csv_file }}</td></tr>
 <tr><td>Created</td><td>{{ stats.session.created_at }}</td></tr>

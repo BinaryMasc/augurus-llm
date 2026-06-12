@@ -9,10 +9,12 @@ class LLMClient:
     def __init__(self, config: dict):
         self.provider = config.get("llm", "ollama")
         self.max_risk = config.get("simulation", {}).get("max_risk_per_trade_percentage", 2.0)
+        self.reasoning = False
         
         if self.provider == "gemini":
             gemini_config = config.get("gemini", {})
             self.model_name = gemini_config.get("model", "gemini-3.1-flash-lite")
+            self.reasoning = gemini_config.get("reasoning", False)
             
             # The API key could be in GEMINI_API_KEY or GOOGLE_API_KEY
             api_key = os.environ.get("GEMINI_API_KEY", "").strip()
@@ -32,6 +34,7 @@ class LLMClient:
             ollama_config = config.get("ollama", {})
             self.url = ollama_config.get("url", "http://localhost:11434")
             self.model_name = ollama_config.get("model", "gemma4-12b-Q8")
+            self.reasoning = ollama_config.get("reasoning", False)
             self.api_endpoint = f"{self.url}/api/generate"
 
     def generate_decision(self, window: List[Dict], portfolio_state: Dict) -> Tuple[str, str, str]:
@@ -66,12 +69,16 @@ Do NOT output explanations, reasons, or JSON. Just the word.
             max_retries = 5
             for attempt in range(max_retries):
                 try:
+                    gen_config_kwargs = {
+                        "temperature": 0.1,
+                        "max_output_tokens": 10
+                    }
+                    if self.reasoning:
+                        gen_config_kwargs["thinking_config"] = {"thinking_budget": -1}
+
                     response = self.gemini_model.generate_content(
                         prompt,
-                        generation_config=genai.types.GenerationConfig(
-                            temperature=0.1,
-                            max_output_tokens=10
-                        )
+                        generation_config=genai.types.GenerationConfig(**gen_config_kwargs)
                     )
                     raw_text = response.text.strip().upper()
                     return self._parse_decision(raw_text), prompt, raw_text

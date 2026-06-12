@@ -30,7 +30,8 @@ class Database:
                     stop_loss_percentage REAL,
                     take_profit_percentage REAL,
                     last_candle_index INTEGER DEFAULT 0,
-                    last_candle_timestamp TEXT
+                    last_candle_timestamp TEXT,
+                    reasoning INTEGER DEFAULT 0
                 )
             ''')
             # Trades table
@@ -67,6 +68,7 @@ class Database:
             # self._migrate_add_column(cursor, 'trades', 'session_id', 'INTEGER')
             # self._migrate_add_column(cursor, 'decisions', 'session_id', 'INTEGER')
             # self._migrate_add_column(cursor, 'decisions', 'model', 'TEXT')
+            self._migrate_add_column(cursor, 'sessions', 'reasoning', 'INTEGER DEFAULT 0')
             conn.commit()
 
     def _migrate_add_column(self, cursor, table: str, column: str, col_type: str):
@@ -88,8 +90,8 @@ class Database:
                     created_at, status, csv_file, symbol, model, llm_provider,
                     trading_timeframe, inference_frequency_m1, candles_to_pass,
                     max_trade_duration_m1, contract_size,
-                    stop_loss_percentage, take_profit_percentage
-                ) VALUES (?, 'RUNNING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    stop_loss_percentage, take_profit_percentage, reasoning
+                ) VALUES (?, 'RUNNING', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 params['csv_file'],
@@ -103,6 +105,7 @@ class Database:
                 params['contract_size'],
                 params['stop_loss_percentage'],
                 params['take_profit_percentage'],
+                params.get('reasoning', 0),
             ))
             conn.commit()
             return cursor.lastrowid
