@@ -9,7 +9,7 @@ simulation:
   stop_loss_percentage: 5.0 # Automatic global stop loss (in %)
   take_profit_percentage: 5.0 # Automatic global take profit (in %)
   db_path: "trading_sim.sqlite"
-llm: "gemini"
+llm: "AIMLAPI"
 ollama:
   url: "http://localhost:11434"
   #model: "gemma4-12b-Q8"
@@ -18,7 +18,8 @@ gemini:
   model: "gemini-3.1-flash-lite"
   reasoning: false
 # TODO
-featherless:
-  base_url: "https://api.featherless.ai/v1"
-  model: "deepseek-ai/DeepSeek-V4-Flash"
+AIMLAPI:
+  base_url: "https://api.aimlapi.com/v1/chat/completions"
+  #model: "deepseek/deepseek-v4-flash"
+  model: "google/gemma-4-31b-it"
   reasoning: false

@@ -30,6 +30,12 @@ class LLMClient:
             genai.configure(api_key=api_key)
             
             self.gemini_model = genai.GenerativeModel(self.model_name)
+        elif self.provider == "AIMLAPI":
+            aiml_config = config.get("AIMLAPI", {})
+            self.model_name = aiml_config.get("model", "deepseek/deepseek-v4-flash")
+            self.base_url = aiml_config.get("base_url", "https://api.aimlapi.com/v1/chat/completions")
+            self.reasoning = aiml_config.get("reasoning", False)
+            self.api_key = os.environ.get("AIML_API_KEY", "").strip()
         else:
             ollama_config = config.get("ollama", {})
             self.url = ollama_config.get("url", "http://localhost:11434")
@@ -108,6 +114,26 @@ Do NOT output explanations, reasons, or JSON. Just the word.
                         
             print("\n[!] Max retries reached for Gemini API. Skipping inference.")
             return "WAIT", prompt, "RATE_LIMIT_EXCEEDED_AFTER_RETRIES"
+        elif self.provider == "AIMLAPI":
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": self.model_name,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "max_tokens": 10
+            }
+            try:
+                response = requests.post(self.base_url, headers=headers, json=payload)
+                response.raise_for_status()
+                data = response.json()
+                raw_text = data["choices"][0]["message"]["content"].strip().upper()
+                return self._parse_decision(raw_text), prompt, raw_text
+            except Exception as e:
+                print(f"AIMLAPI Error: {e}")
+                return "WAIT", prompt, str(e)
         else:
             payload = {
                 "model": self.model_name,
