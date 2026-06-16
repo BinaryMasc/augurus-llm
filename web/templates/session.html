@@ -195,7 +195,7 @@ h1 {
 </head>
 <body>
 <div class="breadcrumb"><a href="/">← Sessions</a> / Session {{ sid }}</div>
-<h1>Session {{ sid }} — {{ stats.session.symbol }} <span class="badge badge-{{ stats.session.status.lower() }}">{{ stats.session.status }}</span></h1>
+<h1>Session {{ sid }} — {{ stats.session.symbol }} <span style="font-size: 18px; color: var(--text-secondary); font-weight: 500;">({{ stats.session.llm_provider }}/{{ stats.session.model }})</span> <span class="badge badge-{{ stats.session.status.lower() }}">{{ stats.session.status }}</span></h1>
 
 <!-- Metrics Grid (3x3 Layout) -->
 <div class="grid grid-3" style="margin-top: 16px;">
