@@ -248,6 +248,63 @@ class Database:
             first_candle_date = dec_row[0] if (dec_row and dec_row[0]) else "N/A"
             last_candle_inference = dec_row[1] if (dec_row and dec_row[1]) else "N/A"
 
+            # Calculate duration stats and daily win percentages
+            winning_durations = []
+            losing_durations = []
+            daily_pnl = {}
+            
+            for t in trades:
+                entry_str = t.get('entry_time')
+                exit_str = t.get('exit_time')
+                pnl = t.get('pnl') or 0.0
+                
+                if entry_str and exit_str:
+                    try:
+                        entry_dt = datetime.strptime(entry_str, '%Y-%m-%d %H:%M:%S')
+                        exit_dt = datetime.strptime(exit_str, '%Y-%m-%d %H:%M:%S')
+                        duration_sec = (exit_dt - entry_dt).total_seconds()
+                        if pnl > 0:
+                            winning_durations.append(duration_sec)
+                        else:
+                            losing_durations.append(duration_sec)
+                    except Exception:
+                        pass
+                
+                if exit_str:
+                    date_str = exit_str[:10]
+                    daily_pnl[date_str] = daily_pnl.get(date_str, 0.0) + pnl
+
+            avg_win_duration = sum(winning_durations) / len(winning_durations) if winning_durations else 0.0
+            avg_loss_duration = sum(losing_durations) / len(losing_durations) if losing_durations else 0.0
+            
+            def format_duration(seconds: float) -> str:
+                if seconds <= 0:
+                    return "N/A"
+                parts = []
+                d = int(seconds // 86400)
+                if d > 0:
+                    parts.append(f"{d}d")
+                    seconds %= 86400
+                h = int(seconds // 3600)
+                if h > 0:
+                    parts.append(f"{h}h")
+                    seconds %= 3600
+                m = int(seconds // 60)
+                if m > 0:
+                    parts.append(f"{m}m")
+                    seconds %= 60
+                s = int(seconds)
+                if s > 0 or not parts:
+                    parts.append(f"{s}s")
+                return " ".join(parts)
+
+            avg_time_winning = format_duration(avg_win_duration)
+            avg_time_losing = format_duration(avg_loss_duration)
+            
+            total_trading_days = len(daily_pnl)
+            winning_days = sum(1 for date_str, day_pnl in daily_pnl.items() if day_pnl > 0)
+            winning_days_pct = (winning_days / total_trading_days * 100) if total_trading_days > 0 else 0.0
+
             return {
                 'session': session,
                 'trades': trades,
@@ -268,6 +325,9 @@ class Database:
                 'pnl_array': pnl_array,
                 'first_candle_date': first_candle_date,
                 'last_candle_inference': last_candle_inference,
+                'avg_time_winning': avg_time_winning,
+                'avg_time_losing': avg_time_losing,
+                'winning_days_pct': round(winning_days_pct, 2),
             }
 
     def get_statistics(self, session_id: int = None) -> Dict:

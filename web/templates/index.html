@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Augurus Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #090d16;
+  --bg-secondary: #0f172a;
+  --bg-card: #1e293b;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #2563eb;
+  --color-accent-grad: linear-gradient(135deg, #3b82f6, #6366f1);
+  --color-pos: #10b981;
+  --color-pos-bg: rgba(16, 185, 129, 0.1);
+  --color-neg: #f43f5e;
+  --color-neg-bg: rgba(244, 63, 94, 0.1);
+  --color-running: #60a5fa;
+  --color-running-bg: rgba(96, 165, 250, 0.1);
+  --color-completed: #34d399;
+  --color-completed-bg: rgba(52, 211, 153, 0.1);
+  --color-interrupted: #f87171;
+  --color-interrupted-bg: rgba(248, 113, 113, 0.1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 32px;
+  line-height: 1.5;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+.header-left h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(to right, #f8fafc, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-top: 4px;
+}
+.table-container {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+th {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+td {
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+tr:last-child td {
+  border-bottom: none;
+}
+tr:hover td {
+  background: rgba(255, 255, 255, 0.015);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.badge-running { background: var(--color-running-bg); color: var(--color-running); }
+.badge-completed { background: var(--color-completed-bg); color: var(--color-completed); }
+.badge-interrupted { background: var(--color-interrupted-bg); color: var(--color-interrupted); }
+.pnl-pos { color: var(--color-pos); font-weight: 600; }
+.pnl-neg { color: var(--color-neg); font-weight: 600; }
+a.btn {
+  background: var(--color-accent-grad);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  text-decoration: none;
+  transition: transform 0.2s, opacity 0.2s, box-shadow 0.2s;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+a.btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="header-left">
+<h1>Augurus Dashboard</h1>
+<p class="subtitle">Trading simulation sessions overview</p>
+</div>
+</div>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>ID</th><th>Status</th><th>Symbol</th><th>Model</th><th>Reasoning</th><th>First Inference CANDLE</th><th>Last Inference CANDLE</th><th>Timeframe</th>
+<th>Trades</th><th>Wins</th><th>Total PnL</th><th>Created</th><th></th>
+</tr>
+</thead>
+<tbody>
+{% for s in sessions %}
+{% set pnl = s.total_pnl|float %}
+<tr>
+<td>{{ s.id }}</td>
+<td><span class="badge badge-{{ s.status.lower() }}">{{ s.status }}</span></td>
+<td>{{ s.symbol }}</td>
+<td>{{ s.llm_provider }}/{{ s.model }}</td>
+<td><span style="color: {{ '#34d399' if s.reasoning else '#94a3b8' }}">{{ 'True' if s.reasoning else 'False' }}</span></td>
+<td>{{ s.first_candle_date or 'N/A' }}</td>
+<td>{{ s.last_candle_inference or 'N/A' }}</td>
+<td>{{ s.trading_timeframe }}</td>
+<td>{{ s.total_trades }}</td>
+<td>{{ s.winning_trades }}</td>
+<td class="{{ 'pnl-pos' if pnl >= 0 else 'pnl-neg' }}">{{ '%+.2f'|format(pnl) }}</td>
+<td>{{ s.created_at[:10] }}</td>
+<td><a class="btn" href="/session/{{ s.id }}">Details</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</body>
+</html>

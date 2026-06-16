@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session {{ sid }} - Augurus Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-primary: #090d16;
+  --bg-secondary: #0f172a;
+  --bg-card: #1e293b;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --color-accent: #3b82f6;
+  --color-accent-grad: linear-gradient(135deg, #3b82f6, #6366f1);
+  --color-pos: #10b981;
+  --color-pos-bg: rgba(16, 185, 129, 0.1);
+  --color-neg: #f43f5e;
+  --color-neg-bg: rgba(244, 63, 94, 0.1);
+  --color-running: #60a5fa;
+  --color-running-bg: rgba(96, 165, 250, 0.1);
+  --color-completed: #34d399;
+  --color-completed-bg: rgba(52, 211, 153, 0.1);
+  --color-interrupted: #f87171;
+  --color-interrupted-bg: rgba(248, 113, 113, 0.1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 32px;
+  line-height: 1.5;
+}
+.breadcrumb {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.breadcrumb a {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+.breadcrumb a:hover {
+  opacity: 0.8;
+}
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.grid {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+.card-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.card-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.card-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.card-chart {
+  min-height: 300px;
+}
+.pnl-pos { color: var(--color-pos); }
+.pnl-neg { color: var(--color-neg); }
+.info-table {
+  width: 100%;
+  font-size: 13px;
+}
+.info-table tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.info-table tr:last-child {
+  border-bottom: none;
+}
+.info-table td {
+  padding: 10px 8px;
+}
+.info-table td:first-child {
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.info-table td:last-child {
+  color: var(--text-primary);
+  text-align: right;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.badge-running { background: var(--color-running-bg); color: var(--color-running); }
+.badge-completed { background: var(--color-completed-bg); color: var(--color-completed); }
+.badge-interrupted { background: var(--color-interrupted-bg); color: var(--color-interrupted); }
+.chart-container {
+  position: relative;
+  height: 240px;
+  margin-top: 12px;
+}
+.trades-table-container {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-top: 12px;
+  background: rgba(0, 0, 0, 0.1);
+}
+.trades-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.trades-table-container th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+.trades-table-container td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.trades-table-container tr:last-child td {
+  border-bottom: none;
+}
+.trades-table-container tr:hover td {
+  background: rgba(255, 255, 255, 0.015);
+}
+</style>
+</head>
+<body>
+<div class="breadcrumb"><a href="/">← Sessions</a> / Session {{ sid }}</div>
+<h1>Session {{ sid }} — {{ stats.session.symbol }} <span class="badge badge-{{ stats.session.status.lower() }}">{{ stats.session.status }}</span></h1>
+
+<!-- Metrics Grid (3x3 Layout) -->
+<div class="grid grid-3" style="margin-top: 16px;">
+<div class="card">
+<div class="card-label">Total PnL</div>
+<div class="card-value {{ 'pnl-pos' if stats.total_pnl >= 0 else 'pnl-neg' }}">{{ '%+.2f'|format(stats.total_pnl) }}</div>
+</div>
+<div class="card">
+<div class="card-label">Win Rate</div>
+<div class="card-value">{{ stats.win_rate }}%</div>
+<div class="card-sub">{{ stats.winning_trades }}W / {{ stats.losing_trades }}L</div>
+</div>
+<div class="card">
+<div class="card-label">% Days Winning</div>
+<div class="card-value">{{ stats.winning_days_pct }}%</div>
+<div class="card-sub">Of days with trading activity</div>
+</div>
+
+<div class="card">
+<div class="card-label">Avg Profit</div>
+<div class="card-value pnl-pos">{{ '%+.2f'|format(stats.avg_profit) }}</div>
+</div>
+<div class="card">
+<div class="card-label">Avg Loss</div>
+<div class="card-value pnl-neg">{{ '%.2f'|format(stats.avg_loss) }}</div>
+</div>
+<div class="card">
+<div class="card-label">Math Expectation</div>
+<div class="card-value">{{ stats.math_expectation }}</div>
+</div>
+
+<div class="card">
+<div class="card-label">Avg Time (Wins)</div>
+<div class="card-value">{{ stats.avg_time_winning }}</div>
+<div class="card-sub">Average holding time</div>
+</div>
+<div class="card">
+<div class="card-label">Avg Time (Losses)</div>
+<div class="card-value">{{ stats.avg_time_losing }}</div>
+<div class="card-sub">Average holding time</div>
+</div>
+<div class="card">
+<div class="card-label">Sharpe Ratio</div>
+<div class="card-value">{{ stats.sharpe_ratio }}</div>
+</div>
+</div>
+
+<!-- Charts Grid -->
+<div class="grid grid-4">
+<div class="card card-chart">
+<div class="card-label">Cumulative PnL</div>
+<div class="chart-container"><canvas id="chartCumulative"></canvas></div>
+</div>
+<div class="card card-chart">
+<div class="card-label">Long / Short Distribution</div>
+<div class="chart-container"><canvas id="chartLongShort"></canvas></div>
+</div>
+<div class="card card-chart">
+<div class="card-label">Win / Loss</div>
+<div class="chart-container"><canvas id="chartWinLoss"></canvas></div>
+</div>
+<div class="card card-chart">
+<div class="card-label">PnL per Trade (Strikes)</div>
+<div class="chart-container"><canvas id="chartStrikes"></canvas></div>
+</div>
+</div>
+
+<!-- Details & Breakdown -->
+<div class="grid grid-2" style="margin-top: 4px;">
+<div class="card">
+<div class="card-label">Session Info</div>
+<table class="info-table">
+<tr><td>Symbol</td><td>{{ stats.session.symbol }}</td></tr>
+<tr><td>Model</td><td>{{ stats.session.llm_provider }}/{{ stats.session.model }}</td></tr>
+<tr><td>Reasoning</td><td>{{ 'Enabled' if stats.session.reasoning else 'Disabled' }}</td></tr>
+<tr><td>First Candle Inference</td><td>{{ stats.first_candle_date }}</td></tr>
+<tr><td>Last Candle Inference</td><td>{{ stats.last_candle_inference }}</td></tr>
+<tr><td>Timeframe</td><td>{{ stats.session.trading_timeframe }}</td></tr>
+<tr><td>CSV File</td><td style="font-size:11px;word-break:break-all;">{{ stats.session.csv_file }}</td></tr>
+<tr><td>Created</td><td>{{ stats.session.created_at }}</td></tr>
+<tr><td>Status</td><td>{{ stats.session.status }}</td></tr>
+<tr><td>Contract Size</td><td>{{ stats.session.contract_size }}</td></tr>
+<tr><td>SL / TP</td><td>{{ stats.session.stop_loss_percentage }}% / {{ stats.session.take_profit_percentage }}%</td></tr>
+<tr><td>Max Duration</td><td>{{ stats.session.max_trade_duration_m1 }} candles</td></tr>
+<tr><td>Inference Freq</td><td>Every {{ stats.session.inference_frequency_m1 }} candles</td></tr>
+<tr><td>Candles to Pass</td><td>{{ stats.session.candles_to_pass }}</td></tr>
+</table>
+</div>
+<div class="card">
+<div class="card-label">Long / Short Breakdown</div>
+<table class="info-table">
+<tr><td>Long Trades</td><td>{{ stats.long_count }} (PnL: {{ '%+.2f'|format(stats.long_pnl) }})</td></tr>
+<tr><td>Short Trades</td><td>{{ stats.short_count }} (PnL: {{ '%+.2f'|format(stats.short_pnl) }})</td></tr>
+</table>
+<div class="card-label" style="margin-top: 20px;">All Trades ({{ stats.total_trades }})</div>
+<div class="trades-table-container">
+<table>
+<thead>
+<tr><th>#</th><th>Type</th><th>Entry</th><th>Exit</th><th>PnL</th><th>Reason</th></tr>
+</thead>
+<tbody>
+{% for t in stats.trades %}
+<tr>
+<td>{{ loop.index }}</td>
+<td><span style="color: {{ '#10b981' if t.type == 'BUY' else '#3b82f6' }}">{{ 'Long' if t.type == 'BUY' else 'Short' }}</span></td>
+<td>{{ t.entry_price }}</td>
+<td>{{ t.exit_price }}</td>
+<td class="{{ 'pnl-pos' if (t.pnl or 0) >= 0 else 'pnl-neg' }}">{{ '%+.2f'|format(t.pnl or 0) }}</td>
+<td>{{ t.reason }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<script>
+// Configure Chart.js dark-mode theme defaults
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+const cumData = {{ stats.cumulative_pnl | tojson }};
+const pnlData = {{ stats.pnl_array | tojson }};
+
+new Chart(document.getElementById('chartCumulative'), {
+type: 'line',
+data: {
+labels: cumData.map(d => '#'.concat(d.index)),
+datasets: [{
+label: 'Cumulative PnL',
+data: cumData.map(d => d.pnl),
+borderColor: '#3b82f6',
+backgroundColor: 'rgba(59, 130, 246, 0.08)',
+fill: true,
+tension: 0.3,
+pointRadius: 2,
+}]
+},
+options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10, color: '#64748b' } },
+y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b' } } } }
+});
+
+new Chart(document.getElementById('chartLongShort'), {
+type: 'doughnut',
+data: {
+labels: ['Long (BUY)', 'Short (SELL)'],
+datasets: [{
+data: [{{ stats.long_count }}, {{ stats.short_count }}],
+backgroundColor: ['#10b981', '#3b82f6'],
+borderWidth: 1,
+borderColor: '#0f172a',
+}]
+},
+options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8 } } } }
+});
+
+const winLossTotal = {{ stats.winning_trades }} + {{ stats.losing_trades }};
+new Chart(document.getElementById('chartWinLoss'), {
+type: 'doughnut',
+data: {
+labels: ['Wins', 'Losses'],
+datasets: [{
+data: [{{ stats.winning_trades }}, {{ stats.losing_trades }}],
+backgroundColor: ['#10b981', '#f43f5e'],
+borderWidth: 1,
+borderColor: '#0f172a',
+}]
+},
+options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8 } } } }
+});
+
+new Chart(document.getElementById('chartStrikes'), {
+type: 'bar',
+data: {
+labels: pnlData.map(d => '#'.concat(d.index)),
+datasets: [{
+label: 'PnL',
+data: pnlData.map(d => d.pnl),
+backgroundColor: pnlData.map(d => d.pnl >= 0 ? '#10b981' : '#f43f5e'),
+borderRadius: 2,
+}]
+},
+options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 20, color: '#64748b' } },
+y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b' } } } }
+});
+</script>
+</body>
+</html>
