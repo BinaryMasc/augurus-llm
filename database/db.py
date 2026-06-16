@@ -182,7 +182,9 @@ class Database:
                 SELECT s.*,
                     (SELECT COUNT(*) FROM trades t WHERE t.session_id = s.id) as total_trades,
                     (SELECT COALESCE(SUM(pnl), 0) FROM trades t WHERE t.session_id = s.id) as total_pnl,
-                    (SELECT COUNT(*) FROM trades t WHERE t.session_id = s.id AND t.pnl > 0) as winning_trades
+                    (SELECT COUNT(*) FROM trades t WHERE t.session_id = s.id AND t.pnl > 0) as winning_trades,
+                    (SELECT MIN(timestamp) FROM decisions d WHERE d.session_id = s.id) as first_candle_date,
+                    (SELECT MAX(timestamp) FROM decisions d WHERE d.session_id = s.id) as last_candle_inference
                 FROM sessions s
                 ORDER BY s.id DESC
             ''')
@@ -241,6 +243,11 @@ class Database:
                           'entry_time': t['entry_time'], 'reason': t.get('reason', '')}
                          for i, t in enumerate(trades)]
 
+            cursor.execute('SELECT MIN(timestamp), MAX(timestamp) FROM decisions WHERE session_id = ?', (session_id,))
+            dec_row = cursor.fetchone()
+            first_candle_date = dec_row[0] if (dec_row and dec_row[0]) else "N/A"
+            last_candle_inference = dec_row[1] if (dec_row and dec_row[1]) else "N/A"
+
             return {
                 'session': session,
                 'trades': trades,
@@ -259,6 +266,8 @@ class Database:
                 'short_pnl': round(short_pnl, 2),
                 'cumulative_pnl': cumulative_pnl,
                 'pnl_array': pnl_array,
+                'first_candle_date': first_candle_date,
+                'last_candle_inference': last_candle_inference,
             }
 
     def get_statistics(self, session_id: int = None) -> Dict:

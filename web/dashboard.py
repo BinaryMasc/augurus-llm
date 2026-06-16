@@ -39,7 +39,7 @@ a:hover { text-decoration: underline; }
 <table>
 <thead>
 <tr>
-<th>ID</th><th>Status</th><th>Symbol</th><th>Model</th><th>Timeframe</th>
+<th>ID</th><th>Status</th><th>Symbol</th><th>Model</th><th>Reasoning</th><th>First Inference</th><th>Last Inference</th><th>Timeframe</th>
 <th>Trades</th><th>Wins</th><th>Total PnL</th><th>Created</th><th></th>
 </tr>
 </thead>
@@ -51,6 +51,9 @@ a:hover { text-decoration: underline; }
 <td><span class="badge badge-{{ s.status.lower() }}">{{ s.status }}</span></td>
 <td>{{ s.symbol }}</td>
 <td>{{ s.llm_provider }}/{{ s.model }}</td>
+<td>{{ 'True' if s.reasoning else 'False' }}</td>
+<td>{{ s.first_candle_date or 'N/A' }}</td>
+<td>{{ s.last_candle_inference or 'N/A' }}</td>
 <td>{{ s.trading_timeframe }}</td>
 <td>{{ s.total_trades }}</td>
 <td>{{ s.winning_trades }}</td>
@@ -159,6 +162,8 @@ h1 { font-size: 22px; }
 <tr><td>Symbol</td><td>{{ stats.session.symbol }}</td></tr>
 <tr><td>Model</td><td>{{ stats.session.llm_provider }}/{{ stats.session.model }}</td></tr>
 <tr><td>Reasoning</td><td>{{ 'Enabled' if stats.session.reasoning else 'Disabled' }}</td></tr>
+<tr><td>First Candle Inference</td><td>{{ stats.first_candle_date }}</td></tr>
+<tr><td>Last Candle Inference</td><td>{{ stats.last_candle_inference }}</td></tr>
 <tr><td>Timeframe</td><td>{{ stats.session.trading_timeframe }}</td></tr>
 <tr><td>CSV File</td><td style="font-size:11px;word-break:break-all;">{{ stats.session.csv_file }}</td></tr>
 <tr><td>Created</td><td>{{ stats.session.created_at }}</td></tr>
