@@ -137,7 +137,7 @@ a.btn:hover {
 <thead>
 <tr>
 <th>ID</th><th>Status</th><th>Symbol</th><th>Model</th><th>Reasoning</th><th>First Inference CANDLE</th><th>Last Inference CANDLE</th><th>Timeframe</th>
-<th>Trades</th><th>Wins</th><th>Total PnL</th><th>Created</th><th></th>
+<th>Inferences</th><th>Trades</th><th>Wins</th><th>Total PnL</th><th>Created</th><th></th>
 </tr>
 </thead>
 <tbody>
@@ -149,9 +149,10 @@ a.btn:hover {
 <td>{{ s.symbol }}</td>
 <td>{{ s.llm_provider }}/{{ s.model }}</td>
 <td><span style="color: {{ '#34d399' if s.reasoning else '#94a3b8' }}">{{ 'True' if s.reasoning else 'False' }}</span></td>
-<td>{{ s.first_candle_date or 'N/A' }}</td>
-<td>{{ s.last_candle_inference or 'N/A' }}</td>
+<td>{{ s.first_candle_date[:10] if s.first_candle_date else 'N/A' }}</td>
+<td>{{ s.last_candle_inference[:10] if s.last_candle_inference else 'N/A' }}</td>
 <td>{{ s.trading_timeframe }}</td>
+<td>{{ s.total_inferences }}</td>
 <td>{{ s.total_trades }}</td>
 <td>{{ s.winning_trades }}</td>
 <td class="{{ 'pnl-pos' if pnl >= 0 else 'pnl-neg' }}">{{ '%+.2f'|format(pnl) }}</td>

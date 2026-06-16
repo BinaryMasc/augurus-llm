@@ -271,8 +271,8 @@ h1 {
 <tr><td>Symbol</td><td>{{ stats.session.symbol }}</td></tr>
 <tr><td>Model</td><td>{{ stats.session.llm_provider }}/{{ stats.session.model }}</td></tr>
 <tr><td>Reasoning</td><td>{{ 'Enabled' if stats.session.reasoning else 'Disabled' }}</td></tr>
-<tr><td>First Candle Inference</td><td>{{ stats.first_candle_date }}</td></tr>
-<tr><td>Last Candle Inference</td><td>{{ stats.last_candle_inference }}</td></tr>
+<tr><td>First Candle Inference</td><td>{{ stats.first_candle_date[:10] if stats.first_candle_date else 'N/A' }}</td></tr>
+<tr><td>Last Candle Inference</td><td>{{ stats.last_candle_inference[:10] if stats.last_candle_inference else 'N/A' }}</td></tr>
 <tr><td>Timeframe</td><td>{{ stats.session.trading_timeframe }}</td></tr>
 <tr><td>CSV File</td><td style="font-size:11px;word-break:break-all;">{{ stats.session.csv_file }}</td></tr>
 <tr><td>Created</td><td>{{ stats.session.created_at }}</td></tr>

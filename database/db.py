@@ -180,6 +180,7 @@ class Database:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT s.*,
+                    (SELECT COUNT(*) FROM decisions d WHERE d.session_id = s.id) as total_inferences,
                     (SELECT COUNT(*) FROM trades t WHERE t.session_id = s.id) as total_trades,
                     (SELECT COALESCE(SUM(pnl), 0) FROM trades t WHERE t.session_id = s.id) as total_pnl,
                     (SELECT COUNT(*) FROM trades t WHERE t.session_id = s.id AND t.pnl > 0) as winning_trades,
