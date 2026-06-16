@@ -39,7 +39,7 @@ a:hover { text-decoration: underline; }
 <table>
 <thead>
 <tr>
-<th>ID</th><th>Status</th><th>Symbol</th><th>Model</th><th>Reasoning</th><th>First Inference</th><th>Last Inference</th><th>Timeframe</th>
+<th>ID</th><th>Status</th><th>Symbol</th><th>Model</th><th>Reasoning</th><th>First Inference CANDLE</th><th>Last Inference CANDLE</th><th>Timeframe</th>
 <th>Trades</th><th>Wins</th><th>Total PnL</th><th>Created</th><th></th>
 </tr>
 </thead>

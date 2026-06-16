@@ -3,6 +3,7 @@ import yaml
 import time
 import re
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 from database.db import Database
 from engine.data_feed import DataFeed
@@ -162,7 +163,8 @@ def run_simulation(debug=False, continue_last=False):
                 
                 # Print minimal progress
                 if inferences_made % 10 == 0:
-                    print(f"[{current_time}] Price: {current_price:.2f} | Inferences: {inferences_made} | Active Trade: {state['status']}")
+                    actual_dt = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    print(f"[{actual_dt}] [{current_time}] (Candle {idx}) Price: {current_price:.2f} | Inferences: {inferences_made} | Active Trade: {state['status']}")
                 
                 decision, prompt, response = llm.generate_decision(window, state)
                 

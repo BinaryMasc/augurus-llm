@@ -46,7 +46,7 @@ class LLMClient:
         
         system_prompt = f"""You are an expert algorithmic scalping trading AI that follows trends and momentum.
 Your task is to analyze the provided recent candlestick data and current portfolio state to make a single trading decision.
-The maximum allowed risk per trade is {self.max_risk}%.
+The maximum allowed risk per trade is {self.max_risk:.2f}%.
 You MUST output EXACTLY ONE of the following words as your decision:
 WAIT
 BUY
@@ -56,14 +56,28 @@ CLOSE
 Do NOT output explanations, reasons, or JSON. Just the word.
 """
 
-        user_content = {
-            "portfolio_state": portfolio_state,
-            "recent_candles": window
-        }
+        portfolio_lines = []
+        for k, v in portfolio_state.items():
+            if isinstance(v, float):
+                portfolio_lines.append(f"{k}: {v:.2f}")
+            else:
+                portfolio_lines.append(f"{k}: {v}")
+        portfolio_str = "\n".join(portfolio_lines)
 
-        user_prompt = json.dumps(user_content, indent=2)
+        candle_headers = ["datetime", "open", "high", "low", "close", "volume"]
+        candle_lines = [" | ".join(candle_headers)]
+        for candle in window:
+            row = []
+            for h in candle_headers:
+                v = candle.get(h, "")
+                if isinstance(v, float):
+                    row.append(f"{v:.2f}")
+                else:
+                    row.append(str(v))
+            candle_lines.append(" | ".join(row))
+        candles_str = "\n".join(candle_lines)
 
-        prompt = f"{system_prompt}\n\nCurrent State:\n{user_prompt}\n\nDECISION:"
+        prompt = f"{system_prompt}\nPortfolio State:\n{portfolio_str}\n\nRecent Candles:\n{candles_str}\n\nDECISION:"
 
         if self.provider == "gemini":
             max_retries = 5

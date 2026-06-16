@@ -193,7 +193,7 @@ CREATE TABLE decisions (
 | `generate_decision(window, portfolio_state)` | Builds prompt, calls LLM, returns `(decision, prompt, raw_response)`. |
 | `_parse_decision(raw_text)` | Extracts first valid keyword (`BUY > SELL > CLOSE > WAIT` priority). |
 
-**Prompt structure**: system prompt (role + risk + output format) + JSON of `portfolio_state` and `recent_candles` + `DECISION:` suffix.
+**Prompt structure**: system prompt (role + risk + output format) + pipe-separated/compact text of `portfolio_state` and `recent_candles` with float values rounded to 2 decimal places + `DECISION:` suffix.
 
 **Provider details**:
 
