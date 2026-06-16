@@ -30,7 +30,10 @@ augurus-llm/
 │   ├── llm_client.py        # LLMClient – prompt construction & LLM calls
 │   └── portfolio.py         # Portfolio – trade execution, SL/TP, PnL
 ├── web/
-│   └── dashboard.py         # Web dashboard – Flask app, Chart.js frontend
+│   ├── dashboard.py         # Web dashboard – Flask app logic
+│   └── templates/           # Flask HTML templates (dark mode)
+│       ├── index.html       # Sessions list page template
+│       └── session.html     # Session details page template
 └── venv/                    # Virtual environment (gitignored)
 ```
 
@@ -109,8 +112,8 @@ Wraps SQLite with context-managed connections (new connection per call). Handles
 | `log_decision(timestamp, price, decision, prompt, response, session_id, model)` | Inserts into `decisions` with session and model info. |
 | `log_trade(..., session_id)` | Inserts into `trades` with session link. |
 | `get_statistics(session_id=None)` | Returns basic stats dict (counts, total PnL, win rate). If `session_id` given, scopes to that session only. |
-| `get_sessions_list()` | Returns all sessions with summary (trades count, total PnL, wins) for the dashboard overview. |
-| `get_session_details(session_id)` | Returns detailed stats for a session: avg profit/loss, sharpe ratio, math expectation, long/short breakdown, cumulative PnL array, per-trade PnL array. Used by the web dashboard. |
+| `get_sessions_list()` | Returns all sessions with summary (trades count, total PnL, wins, total inferences) for the dashboard overview. |
+| `get_session_details(session_id)` | Returns detailed stats for a session: avg profit/loss, sharpe ratio, math expectation, long/short breakdown, cumulative PnL array, per-trade PnL array, average hold times (win/loss), and % days winning. Used by the web dashboard. |
 
 #### SQLite Schema
 
