@@ -29,6 +29,41 @@ def create_app(db: Database):
             return jsonify({'error': 'Session not found'}), 404
         return jsonify(stats)
 
+    @app.route('/api/session/<int:session_id>/candles')
+    def api_session_candles(session_id):
+        session = db.get_session_by_id(session_id)
+        if session is None:
+            return jsonify({'error': 'Session not found'}), 404
+
+        csv_file = session.get('csv_file')
+        # Allow passing timeframe as query parameter, default to session's trading timeframe
+        timeframe = request.args.get('timeframe', session.get('trading_timeframe', 'M1')).upper()
+        last_ts = session.get('last_candle_timestamp')
+
+        try:
+            import pandas as pd
+            from engine.data_feed import DataFeed
+            data_feed = DataFeed(csv_file, timeframe)
+            
+            if last_ts:
+                # Slice candles up to the simulation checkpoint timestamp
+                df_slice = data_feed.df[data_feed.df['datetime'] <= pd.to_datetime(last_ts)].copy()
+            else:
+                candles_to_pass = session.get('candles_to_pass', 15)
+                limit = min(candles_to_pass, len(data_feed.df))
+                df_slice = data_feed.df.iloc[0:limit].copy()
+
+            df_slice['time'] = df_slice['datetime'].dt.tz_localize('UTC').apply(lambda x: int(x.timestamp()))
+            
+            candles = df_slice[['time', 'open', 'high', 'low', 'close', 'volume']].to_dict(orient='records')
+            return jsonify({
+                'candles': candles,
+                'last_candle_index': session.get('last_candle_index', 0),
+                'last_candle_timestamp': last_ts
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     return app
 
 
