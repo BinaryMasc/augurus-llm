@@ -330,6 +330,30 @@
       font-size: 10px;
       font-weight: 700;
     }
+    .csv-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .csv-btn:hover {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.4);
+      transform: translateY(-1px);
+    }
+    .csv-btn:active {
+      transform: translateY(0);
+      background: rgba(59, 130, 246, 0.25);
+    }
   </style>
 </head>
 
@@ -483,7 +507,13 @@
           <td>{{ stats.short_count }} (PnL: {{ '%+.2f'|format(stats.short_pnl) }})</td>
         </tr>
       </table>
-      <div class="card-label" style="margin-top: 20px;">All Trades ({{ stats.total_trades }})</div>
+      <div class="card-label" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <span>All Trades ({{ stats.total_trades }})</span>
+        <button id="downloadCsvBtn" class="csv-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
       <div class="trades-table-container">
         <table>
           <thead>
@@ -1018,6 +1048,50 @@
                 currentYear++;
             }
             renderCalendar(currentYear, currentMonth);
+        });
+    }
+})();
+
+// --- CSV Download Implementation ---
+(function() {
+    const trades = {{ stats.trades | tojson }};
+    const sessionId = {{ sid }};
+    const downloadBtn = document.getElementById('downloadCsvBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+            const headers = ['Index', 'Type', 'Entry Time', 'Entry Price', 'Exit Time', 'Exit Price', 'Size', 'PnL', 'Reason'];
+            const rows = (trades || []).map((t, idx) => [
+                idx + 1,
+                t.type,
+                t.entry_time,
+                t.entry_price,
+                t.exit_time || '',
+                t.exit_price || '',
+                t.size || '',
+                t.pnl || 0,
+                t.reason || ''
+            ]);
+            
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(val => {
+                    const str = String(val);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                }).join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `session_${sessionId}_trades.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
     }
 })();

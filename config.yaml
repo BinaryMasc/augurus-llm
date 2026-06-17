@@ -22,4 +22,4 @@ AIMLAPI:
   base_url: "https://api.aimlapi.com/v1/chat/completions"
   #model: "deepseek/deepseek-v4-flash"
   model: "google/gemma-4-31b-it"
-  reasoning: false
+  reasoning: true
