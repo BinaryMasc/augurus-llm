@@ -463,25 +463,30 @@
   <div class="card" style="margin-bottom: 24px; padding: 24px;">
     <div class="card-label"
       style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-      <span style="font-size: 14px; font-weight: 700; letter-spacing: 0.05em; color: var(--text-primary);">Price &
-        Trades Candlestick Chart</span>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span
-          style="font-size: 11px; text-transform: none; color: var(--text-muted); font-weight: 500; margin-right: 4px;">Timeframe:</span>
-        <div class="timeframe-selector"
-          style="display: flex; gap: 4px; background: rgba(0, 0, 0, 0.2); padding: 2px; border-radius: 8px; border: 1px solid var(--border-color);">
-          <button class="tf-btn" data-tf="M1"
-            style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">1m</button>
-          <button class="tf-btn" data-tf="M5"
-            style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">5m</button>
-          <button class="tf-btn" data-tf="M15"
-            style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">15m</button>
-          <button class="tf-btn" data-tf="H1"
-            style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">1h</button>
-          <button class="tf-btn" data-tf="H4"
-            style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">4h</button>
-          <button class="tf-btn" data-tf="D1"
-            style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">1d</button>
+      <span style="font-size: 14px; font-weight: 700; letter-spacing: 0.05em; color: var(--text-primary);">Price & Trades Candlestick Chart</span>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; text-transform: none; color: var(--text-secondary); cursor: pointer; user-select: none; font-weight: 500;">
+          <input type="checkbox" id="toggleTrades" checked style="accent-color: var(--color-accent); width: 14px; height: 14px; cursor: pointer;">
+          Show Trades
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span
+            style="font-size: 11px; text-transform: none; color: var(--text-muted); font-weight: 500; margin-right: 4px;">Timeframe:</span>
+          <div class="timeframe-selector"
+            style="display: flex; gap: 4px; background: rgba(0, 0, 0, 0.2); padding: 2px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <button class="tf-btn" data-tf="M1"
+              style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">1m</button>
+            <button class="tf-btn" data-tf="M5"
+              style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">5m</button>
+            <button class="tf-btn" data-tf="M15"
+              style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">15m</button>
+            <button class="tf-btn" data-tf="H1"
+              style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">1h</button>
+            <button class="tf-btn" data-tf="H4"
+              style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">4h</button>
+            <button class="tf-btn" data-tf="D1"
+              style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">1d</button>
+          </div>
         </div>
       </div>
     </div>
@@ -598,6 +603,10 @@
     let chart = null;
     let candlestickSeries = null;
     let seriesMarkers = null;
+    let currentMarkers = [];
+
+    const toggleTradesCheckbox = document.getElementById('toggleTrades');
+    let showTrades = toggleTradesCheckbox ? toggleTradesCheckbox.checked : true;
 
     // Function to parse date strings "YYYY-MM-DD HH:MM:SS" into UTC timestamp in seconds
     function parseDateTimeToUnix(dateTimeStr) {
@@ -726,12 +735,14 @@
 
           // Sort markers chronologically
           markers.sort((a, b) => a.time - b.time);
+          currentMarkers = markers;
 
-          // Set or update markers
+          // Set or update markers based on checkbox state
+          const markersToSet = showTrades ? currentMarkers : [];
           if (!seriesMarkers) {
-            seriesMarkers = LightweightCharts.createSeriesMarkers(candlestickSeries, markers);
+            seriesMarkers = LightweightCharts.createSeriesMarkers(candlestickSeries, markersToSet);
           } else {
-            seriesMarkers.setMarkers(markers);
+            seriesMarkers.setMarkers(markersToSet);
           }
 
           // Fit content
@@ -758,6 +769,16 @@
         loadChartData(tf);
       });
     });
+
+    // Bind checkbox change event to show/hide trades
+    if (toggleTradesCheckbox) {
+      toggleTradesCheckbox.addEventListener('change', (e) => {
+        showTrades = e.target.checked;
+        if (seriesMarkers) {
+          seriesMarkers.setMarkers(showTrades ? currentMarkers : []);
+        }
+      });
+    }
 }) ();
   </script>
 </body>
