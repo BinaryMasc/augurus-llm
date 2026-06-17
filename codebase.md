@@ -229,6 +229,27 @@ Both use `temperature=0.1` and `max_output_tokens=10` to force terse output.
 
 ---
 
+### `web/dashboard.py` — Web Dashboard
+
+Flask application that serves the dashboard templates and JSON APIs.
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/` | `GET` | Render the overview page (`index.html`) with all sessions list. |
+| `/session/<int:session_id>` | `GET` | Render the session detail page (`session.html`) for a specific ID. |
+| `/api/sessions` | `GET` | JSON list of all sessions and summaries. |
+| `/api/session/<int:session_id>/stats` | `GET` | JSON details and metrics for a specific session. |
+| `/api/session/<int:session_id>/candles` | `GET` | JSON list of OHLCV candles sliced up to `last_candle_timestamp` for chart rendering. Accepts optional `?timeframe=<TF>` query parameter for dynamic downsampling. |
+
+**Web Features**:
+- **Candlestick Chart**: Uses TradingView's Lightweight Charts (v5) to plot price data (OHLC) up to the session progress, with custom markers for `BUY` entries (green), `SELL` entries (blue), and position exits (red) showing exit price and realized PnL.
+- **Timeframe Selector**: Buttons inside the chart card that fetch newly aggregated candle arrays (`1m`, `5m`, `15m`, `1h`, `4h`, `1d`) dynamically.
+- **Show/Hide Trades**: Toggle checkbox to hide/show trade markers on the chart instantly.
+- **Trading Calendar**: Interactive heatmap-style monthly calendar below the chart. Displays closed trades count and realized PnL per day (colored green/red based on profitability) and sums total monthly stats.
+- **Trades History**: Lists all trades with entry/exit timestamps, execution prices, realized PnLs, and close reasons.
+
+---
+
 ## 5. Configuration Reference (`config.yaml`)
 
 ```yaml

@@ -260,17 +260,76 @@
 
     .trades-table-container tr:hover td {
       background: rgba(255, 255, 255, 0.015);
+    }
 
-      .tf-btn:hover {
-        color: var(--text-primary) !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-      }
+    .tf-btn:hover {
+      color: var(--text-primary) !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
 
-      .tf-btn.active {
-        color: var(--text-primary) !important;
-        background: var(--color-accent) !important;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-      }
+    .tf-btn.active {
+      color: var(--text-primary) !important;
+      background: var(--color-accent) !important;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Trading Calendar Styles */
+    .cal-day-cell {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      min-height: 80px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, background-color 0.2s, border-color 0.2s;
+    }
+    .cal-day-cell:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .cal-day-cell.empty {
+      background: none;
+      border-color: transparent;
+      pointer-events: none;
+    }
+    .cal-day-cell.pos-pnl {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+    .cal-day-cell.pos-pnl:hover {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .cal-day-cell.neg-pnl {
+      background: rgba(244, 63, 94, 0.08);
+      border-color: rgba(244, 63, 94, 0.2);
+    }
+    .cal-day-cell.neg-pnl:hover {
+      background: rgba(244, 63, 94, 0.12);
+      border-color: rgba(244, 63, 94, 0.3);
+    }
+    .cal-day-num {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .cal-day-stats {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1px;
+    }
+    .cal-day-trades {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .cal-day-profit {
+      font-size: 10px;
+      font-weight: 700;
+    }
   </style>
 </head>
 
@@ -496,6 +555,39 @@
         style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); font-size: 14px;">
         Loading candlestick data...
       </div>
+    </div>
+  </div>
+
+  <!-- Trading Calendar Card -->
+  <div class="card" style="margin-bottom: 24px; padding: 24px;">
+    <div class="card-label" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+      <span style="font-size: 14px; font-weight: 700; letter-spacing: 0.05em; color: var(--text-primary);">Trading Calendar</span>
+      <!-- Month navigation & Stats -->
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <div id="calendarStats" style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">
+          Month Trades: <span id="calMonthTrades" style="color: var(--text-primary);">0</span> | 
+          Month PnL: <span id="calMonthPnl" style="color: var(--text-primary);">$0.00</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; background: rgba(0, 0, 0, 0.2); padding: 2px; border-radius: 8px; border: 1px solid var(--border-color);">
+          <button id="calPrevMonth" style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">&lt;</button>
+          <span id="calCurrentMonthYear" style="color: var(--text-primary); font-size: 11px; font-weight: 600; padding: 0 10px; min-width: 110px; text-align: center; user-select: none;">Loading...</span>
+          <button id="calNextMonth" style="background: none; border: none; color: var(--text-secondary); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;">&gt;</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Calendar Grid -->
+    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+      <div style="text-align: center; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 8px 0;">Sun</div>
+      <div style="text-align: center; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 8px 0;">Mon</div>
+      <div style="text-align: center; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 8px 0;">Tue</div>
+      <div style="text-align: center; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 8px 0;">Wed</div>
+      <div style="text-align: center; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 8px 0;">Thu</div>
+      <div style="text-align: center; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 8px 0;">Fri</div>
+      <div style="text-align: center; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 8px 0;">Sat</div>
+    </div>
+    <div id="calendarBody" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 4px;">
+      <!-- Generated dynamically in JS -->
     </div>
   </div>
 
@@ -780,6 +872,155 @@
       });
     }
 }) ();
+
+// --- Trading Calendar Implementation ---
+(function() {
+    const trades = {{ stats.trades | tojson }};
+    const calendarBody = document.getElementById('calendarBody');
+    const calCurrentMonthYear = document.getElementById('calCurrentMonthYear');
+    const calMonthTrades = document.getElementById('calMonthTrades');
+    const calMonthPnl = document.getElementById('calMonthPnl');
+    const btnPrev = document.getElementById('calPrevMonth');
+    const btnNext = document.getElementById('calNextMonth');
+
+    // Group trades by exit date
+    const dailyStats = {};
+    trades.forEach(trade => {
+        if (!trade.exit_time) return;
+        const dateStr = trade.exit_time.substring(0, 10); // "YYYY-MM-DD"
+        const pnl = trade.pnl || 0;
+        
+        if (!dailyStats[dateStr]) {
+            dailyStats[dateStr] = {
+                tradesCount: 0,
+                pnl: 0
+            };
+        }
+        dailyStats[dateStr].tradesCount += 1;
+        dailyStats[dateStr].pnl += pnl;
+    });
+
+    const exitDates = Object.keys(dailyStats).sort();
+    
+    // Determine initial month/year based on last active trade, or fallback to first candle date
+    let currentYear, currentMonth;
+    if (exitDates.length > 0) {
+        const lastDateParts = exitDates[exitDates.length - 1].split('-');
+        currentYear = parseInt(lastDateParts[0]);
+        currentMonth = parseInt(lastDateParts[1]) - 1;
+    } else {
+        const firstCandleDate = "{{ stats.first_candle_date }}";
+        if (firstCandleDate && firstCandleDate !== 'N/A') {
+            const parts = firstCandleDate.split(' ')[0].split('-');
+            currentYear = parseInt(parts[0]);
+            currentMonth = parseInt(parts[1]) - 1;
+        } else {
+            const today = new Date();
+            currentYear = today.getFullYear();
+            currentMonth = today.getMonth();
+        }
+    }
+
+    const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    function renderCalendar(year, month) {
+        if (!calendarBody || !calCurrentMonthYear) return;
+        calendarBody.innerHTML = '';
+        calCurrentMonthYear.textContent = `${monthNames[month]} ${year}`;
+
+        // Get day of the week for the 1st of the month (UTC to avoid timezone issues)
+        const firstDayUtc = new Date(Date.UTC(year, month, 1));
+        const startDayOfWeek = firstDayUtc.getUTCDay();
+
+        // Get total number of days in the month
+        const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+
+        // Render empty cells for days before the start of the month
+        for (let i = 0; i < startDayOfWeek; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'cal-day-cell empty';
+            calendarBody.appendChild(emptyCell);
+        }
+
+        let totalMonthTrades = 0;
+        let totalMonthPnl = 0;
+
+        // Render month days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const stats = dailyStats[dateStr];
+
+            const cell = document.createElement('div');
+            cell.className = 'cal-day-cell';
+            
+            const dayNum = document.createElement('span');
+            dayNum.className = 'cal-day-num';
+            dayNum.textContent = day;
+            cell.appendChild(dayNum);
+
+            if (stats) {
+                totalMonthTrades += stats.tradesCount;
+                totalMonthPnl += stats.pnl;
+
+                cell.classList.add(stats.pnl >= 0 ? 'pos-pnl' : 'neg-pnl');
+
+                const statsDiv = document.createElement('div');
+                statsDiv.className = 'cal-day-stats';
+
+                const tradesSpan = document.createElement('span');
+                tradesSpan.className = 'cal-day-trades';
+                tradesSpan.textContent = `${stats.tradesCount} ${stats.tradesCount === 1 ? 'trade' : 'trades'}`;
+                statsDiv.appendChild(tradesSpan);
+
+                const profitSpan = document.createElement('span');
+                profitSpan.className = 'cal-day-profit';
+                profitSpan.style.color = stats.pnl >= 0 ? 'var(--color-pos)' : 'var(--color-neg)';
+                profitSpan.textContent = (stats.pnl >= 0 ? '+$' : '-$') + Math.abs(stats.pnl).toFixed(2);
+                statsDiv.appendChild(profitSpan);
+
+                cell.appendChild(statsDiv);
+            }
+
+            calendarBody.appendChild(cell);
+        }
+
+        // Update Month stats in header
+        if (calMonthTrades) calMonthTrades.textContent = totalMonthTrades;
+        if (calMonthPnl) {
+            calMonthPnl.textContent = (totalMonthPnl >= 0 ? '+$' : '-$') + Math.abs(totalMonthPnl).toFixed(2);
+            calMonthPnl.className = totalMonthPnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+        }
+    }
+
+    // Initial render
+    renderCalendar(currentYear, currentMonth);
+
+    // Event listeners
+    if (btnPrev) {
+        btnPrev.addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar(currentYear, currentMonth);
+        });
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar(currentYear, currentMonth);
+        });
+    }
+})();
   </script>
 </body>
 

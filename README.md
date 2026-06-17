@@ -24,5 +24,4 @@ This is an experiment to test the profitability of trading using LLMs. This is n
 - [ ] **Advanced Risk Management**: Dynamic stop-loss and trailing take-profit, informed by the LLM.
 - [x] **Structured Outputs**: Use strict JSON schemas/function calling in Ollama when the feature becomes stable, to guarantee the LLM outputs exact structures.
 - [x] **Save input tokens**: Improve current usage for faster calculations and cost reduction.
-- [x] **Enhance dashboard**: Show callendar, metrics by month.
 - [ ] **Upgrade system prompt**: Experiment and check if it improve results.
